@@ -18,7 +18,7 @@
 #define CFG_USE_STATIC_IP     1
 
 /* 固定IP (CFG_USE_STATIC_IP=1 のときのみ有効)  ← 環境に合わせて変更 */
-#define CFG_IP_ADDR           10, 5, 2, 30
+#define CFG_IP_ADDR           10, 5, 2, 20
 #define CFG_IP_MASK           255, 255, 255, 0
 #define CFG_IP_GATEWAY        10, 5, 2, 1
 #define CFG_IP_DNS            10, 5, 2, 1
