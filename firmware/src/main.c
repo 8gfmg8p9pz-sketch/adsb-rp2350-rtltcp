@@ -17,6 +17,8 @@
 #include "usb_host.h"
 #include "rtl2832u.h"
 #include "leds.h"
+#include "netlog.h"
+#include "hardware/structs/usb.h"
 
 rtltcp_shared_t g_shared;
 static uint8_t g_ring_storage[CFG_RING_BUFFER_BYTES];
@@ -149,6 +151,7 @@ int main(void)
 {
     clocks_setup();
     debug_uart_init();
+    netlog_init();
     sleep_ms(200);
     printf("\n\n=== RP2350-POE-ETH rtl_tcp server v%s ===\n", VERSION_STR);
     printf("port %u, default %lu Hz @ %lu S/s\n", CFG_RTLTCP_PORT,
@@ -253,6 +256,7 @@ int main(void)
         else                                           leds_set(LED_IDLE);
 
         if (time_reached(next_stats)) {
+            printf("[usbhw] main_ctrl=%08lx sie_ctrl=%08lx sie_status=%08lx muxing=%08lx pwr=%08lx\n", (unsigned long)usb_hw->main_ctrl, (unsigned long)usb_hw->sie_ctrl, (unsigned long)usb_hw->sie_status, (unsigned long)usb_hw->muxing, (unsigned long)usb_hw->pwr);
             next_stats = make_timeout_time_ms(CFG_STATUS_PRINT_SEC * 1000);
             print_stats();
         }

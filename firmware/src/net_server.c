@@ -12,6 +12,7 @@
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
 #include "ota.h"
+#include "netlog.h"
 
 #include "config.h"
 #include "rtl_tcp.h"
@@ -253,6 +254,7 @@ void net_core1_main(void)
             if (!g_shared.ip_ready) { sleep_ms(1); continue; }
         }
         ota_poll();
+        netlog_poll();
         rtltcp_server_poll();
     }
 }

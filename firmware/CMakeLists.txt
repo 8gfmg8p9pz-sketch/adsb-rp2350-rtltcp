@@ -59,6 +59,7 @@ add_executable(rtltcp_rp2350
     src/rtl2832u.c
     src/net_server.c
     src/ota.c
+    src/netlog.c
     src/ring.c
     src/leds.c
     tuner/tuner_r82xx.c

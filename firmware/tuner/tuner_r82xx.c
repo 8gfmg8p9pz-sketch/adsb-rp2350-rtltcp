@@ -1,3 +1,5 @@
+/* R82XX_DELAYS_ENABLED */
+#include "pico/stdlib.h"
 /*
  * Rafael Micro R820T/R828D driver
  *
@@ -561,7 +563,7 @@ static int r82xx_set_pll(struct r82xx_priv *priv, uint32_t freq)
 		return rc;
 
 	for (i = 0; i < 2; i++) {
-//		usleep_range(sleep_time, sleep_time + 1000);
+sleep_us(sleep_time);
 
 		/* Check if PLL has locked */
 		rc = r82xx_read(priv, 0x00, data, 3);
@@ -727,7 +729,7 @@ static int r82xx_sysfreq_sel(struct r82xx_priv *priv, uint32_t freq,
 		if (rc < 0)
 			return rc;
 
-//		msleep(250);
+sleep_ms(250);
 
 		/* write LNA TOP = 3 */
 		rc = r82xx_write_reg_mask(priv, 0x1d, 0x18, 0x38);
@@ -833,7 +835,7 @@ static int r82xx_set_tv_standard(struct r82xx_priv *priv,
 		rc = r82xx_write_reg_mask(priv, 0x1d, 0x00, 0x38);
 		if (rc < 0)
 			return rc;
-//		usleep_range(1000, 2000);
+sleep_us(1000);
 	}
 	priv->int_freq = if_khz * 1000;
 
@@ -867,7 +869,7 @@ static int r82xx_set_tv_standard(struct r82xx_priv *priv,
 			if (rc < 0)
 				return rc;
 
-//			usleep_range(1000, 2000);
+sleep_us(1000);
 
 			/* Stop Trigger */
 			rc = r82xx_write_reg_mask(priv, 0x0b, 0x00, 0x10);
@@ -1369,7 +1371,7 @@ static int r82xx_xtal_check(struct r82xx_priv *priv)
 		if (rc < 0)
 			return rc;
 
-//		usleep_range(5000, 6000);
+sleep_us(5000);
 
 		rc = r82xx_read(priv, 0x00, data, sizeof(data));
 		if (rc < 0)

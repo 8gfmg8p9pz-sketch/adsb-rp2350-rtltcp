@@ -58,10 +58,14 @@ void usb_host_init(void)
 }
 
 static bool submit_bulk(void);
+static void usb_mount_work(uint8_t daddr);
+static volatile bool    s_mount_pending = false;
+static volatile uint8_t s_mount_addr = 0;
 
 void usb_host_task(void)
 {
     tuh_task();
+    if (s_mount_pending) { s_mount_pending = false; usb_mount_work(s_mount_addr); }
     if (s_resubmit_pending && time_reached(s_resubmit_at)) {
         s_resubmit_pending = false;
         if (s_stream_enabled && !s_stream_paused && !s_xfer_active && s_state != USBH_NO_DEVICE) {
@@ -110,7 +114,7 @@ static void get_string(uint8_t daddr, bool manufacturer, char *out, size_t out_l
 
 /* ------------------------------------------------------------------------- */
 /* mount / unmount                                                           */
-void tuh_mount_cb(uint8_t daddr)
+static void usb_mount_work(uint8_t daddr)
 {
     tuh_vid_pid_get(daddr, &s_vid, &s_pid);
     printf("[usb] device mounted addr=%u VID=%04x PID=%04x speed=%s\n", daddr, s_vid, s_pid,
@@ -118,7 +122,13 @@ void tuh_mount_cb(uint8_t daddr)
 
     /* find the first bulk IN endpoint in configuration 1 */
     static uint8_t CFG_TUSB_MEM_ALIGN cfg[CFG_TUH_ENUMERATION_BUFSIZE];
-    if (tuh_descriptor_get_configuration_sync(daddr, 0, cfg, sizeof(cfg)) != XFER_RESULT_SUCCESS) {
+    uint16_t want_len = 9;
+    if (tuh_descriptor_get_configuration_sync(daddr, 0, cfg, 9) == XFER_RESULT_SUCCESS) {
+        want_len = tu_le16toh(((tusb_desc_configuration_t const *)cfg)->wTotalLength);
+        if (want_len > sizeof(cfg)) want_len = sizeof(cfg);
+    }
+    printf("[usb] config descriptor length %u\n", want_len);
+    if (tuh_descriptor_get_configuration_sync(daddr, 0, cfg, want_len) != XFER_RESULT_SUCCESS) {
         printf("[usb] failed to read configuration descriptor\n");
         return;
     }
@@ -158,8 +168,8 @@ void tuh_mount_cb(uint8_t daddr)
     s_ep_in = ep_desc.bEndpointAddress;
     s_daddr = daddr;
 
-    get_string(daddr, true,  s_manufact, sizeof(s_manufact));
-    get_string(daddr, false, s_product,  sizeof(s_product));
+    s_manufact[0] = 0;
+    s_product[0] = 0;
     printf("[usb] bulk IN ep=0x%02x  \"%s\" / \"%s\"\n", s_ep_in, s_manufact, s_product);
 
     s_bytes_total = 0;
@@ -167,9 +177,16 @@ void tuh_mount_cb(uint8_t daddr)
     s_state = USBH_DEVICE_READY;
 }
 
+void tuh_mount_cb(uint8_t daddr)
+{
+    s_mount_addr = daddr;
+    s_mount_pending = true;
+}
+
 void tuh_umount_cb(uint8_t daddr)
 {
     printf("[usb] device removed addr=%u\n", daddr);
+    s_mount_pending = false;
     s_stream_enabled = false;
     s_xfer_active = false;
     s_state = USBH_NO_DEVICE;

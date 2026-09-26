@@ -10,6 +10,9 @@ extern "C" {
 #error CFG_TUSB_MCU must be defined (pico-sdk sets it)
 #endif
 
+/* TUSB_DEBUG_NETLOG */
+#undef CFG_TUSB_DEBUG
+#define CFG_TUSB_DEBUG 1
 #define CFG_TUSB_RHPORT0_MODE     (OPT_MODE_HOST | OPT_MODE_FULL_SPEED)
 #define CFG_TUH_ENABLED           1
 #define CFG_TUD_ENABLED           0
