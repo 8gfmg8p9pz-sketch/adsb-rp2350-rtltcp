@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import socket, struct, sys, zlib, os, time
 ip = sys.argv[1] if len(sys.argv) > 1 else "10.5.2.20"
-path = sys.argv[2] if len(sys.argv) > 2 else os.path.expanduser("~/adsb-rp2350-rtltcp/firmware/build/rtltcp_rp2350.bin")
+path = sys.argv[2] if len(sys.argv) > 2 else os.path.expanduser("~/rp2350-poe-airband-iq/firmware/build/rtltcp_rp2350.bin")
 data = open(path, "rb").read()
 crc = zlib.crc32(data) & 0xFFFFFFFF
 print(f"file : {path}  {len(data)} bytes  crc32={crc:08x}")

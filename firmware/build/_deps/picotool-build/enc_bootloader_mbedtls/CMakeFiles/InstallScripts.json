@@ -1,7 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/Users/higatooru/adsb-rp2350-rtltcp/firmware/build/_deps/picotool-build/enc_bootloader_mbedtls/cmake_install.cmake"
-	],
-	"Parallel" : false
-}
