@@ -69,6 +69,6 @@
 /* RTL2832U の USB EP A 最大パケット長レジスタ (0x2158) に書く値。
  * librtlsdr の既定は 0x0002 (=512B, High-Speed 用)。RP2350 は Full-Speed(64B) なので、
  * データが全く流れない / usberr が増え続ける場合は 0x4000 (=64B) を試してください。 */
-#define CFG_RTL_EPA_MAXPKT         0x0002
+#define CFG_RTL_EPA_MAXPKT         0x4000
 
 #endif /* RTLTCP_CONFIG_H */
