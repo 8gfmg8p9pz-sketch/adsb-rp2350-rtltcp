@@ -163,6 +163,7 @@ int main(void)
 
     /* network on core1 */
     multicore_launch_core1(net_core1_main);
+    multicore_lockout_victim_init();
 
     /* USB host on core0 */
     usb_host_init();
@@ -244,7 +245,8 @@ int main(void)
         }
 
         /* status LED */
-        if (usb_host_state() != USBH_DEVICE_OPEN)      leds_set(LED_NO_SDR);
+        if (usb_host_state() == USBH_NO_DEVICE) leds_set(LED_NO_SDR);
+        else if (usb_host_state() != USBH_DEVICE_OPEN) leds_set(LED_BOOT);
         else if (!g_shared.sdr_ready)                  leds_set(LED_ERROR);
         else if (!g_shared.link_up || !g_shared.ip_ready) leds_set(LED_NO_LINK);
         else if (streaming)                            leds_set(LED_STREAMING);

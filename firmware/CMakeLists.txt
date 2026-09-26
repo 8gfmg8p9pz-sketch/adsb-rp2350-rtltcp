@@ -58,6 +58,7 @@ add_executable(rtltcp_rp2350
     src/usb_host.c
     src/rtl2832u.c
     src/net_server.c
+    src/ota.c
     src/ring.c
     src/leds.c
     tuner/tuner_r82xx.c
@@ -90,6 +91,7 @@ target_compile_definitions(rtltcp_rp2350 PRIVATE
 )
 
 target_link_libraries(rtltcp_rp2350
+    pico_flash hardware_flash
     pico_stdlib
     pico_stdio_uart
     pico_multicore
