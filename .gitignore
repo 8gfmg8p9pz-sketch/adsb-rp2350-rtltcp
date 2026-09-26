@@ -1,3 +1,4 @@
 firmware/build/
 firmware/build2/
+firmware/build_fastscan*/
 host/__pycache__/

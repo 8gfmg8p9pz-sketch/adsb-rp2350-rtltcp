@@ -32,6 +32,8 @@ void     usb_stream_start(void);
 void     usb_stream_stop(void);          /* stop and wait for the pipe to go idle */
 void     usb_stream_pause(void);         /* temporarily idle the EPX engine (before control xfers) */
 void     usb_stream_resume(void);
+void     usb_stream_pause_abort(void);   /* pause without waiting: drops the transfer in flight */
+void     usb_stream_set_xfer_len(uint16_t len);
 bool     usb_stream_running(void);
 void     usb_stream_reset_toggle(void);  /* host-side data toggle -> DATA0 (after rtlsdr_reset_buffer) */
 bool     usb_stream_fault(void);         /* stream stopped itself after repeated errors/STALL */

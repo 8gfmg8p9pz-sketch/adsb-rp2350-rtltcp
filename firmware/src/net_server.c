@@ -14,6 +14,7 @@
 #include "ota.h"
 #include "netlog.h"
 #include "scanner.h"
+#include "fastscan.h"
 
 #include "config.h"
 #include "rtl_tcp.h"
@@ -182,6 +183,9 @@ static void rtltcp_server_poll(void)
         }
 
         /* outgoing IQ data */
+#if CFG_FASTSCAN
+        if (g_shared.iq_to_net)   /* core0 hands the ring over once the scanner has let go of it */
+#endif
         {
             uint16_t free = getSn_TX_FSR(SOCK_RTLTCP);
             uint32_t avail = ring_used(&g_shared.iq_ring);
@@ -261,6 +265,9 @@ void net_core1_main(void)
         scan_net_poll();
 #else
         rtltcp_server_poll();
+#endif
+#if CFG_FASTSCAN
+        fastscan_net_poll();
 #endif
     }
 }

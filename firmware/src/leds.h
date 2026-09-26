@@ -9,6 +9,7 @@ typedef enum {
     LED_IDLE,          /* blue    : ready, waiting for rtl_tcp client */
     LED_STREAMING,     /* green   : client connected, streaming */
     LED_ERROR,         /* magenta : error (tuner init failed etc.) */
+    LED_SCAN_HIT,      /* cyan    : fast scanner is receiving a channel */
 } led_state_t;
 
 void leds_init(void);

@@ -26,6 +26,10 @@
 #ifndef CFG_SCANNER
 #define CFG_SCANNER 0
 #endif
+/* 1 = 改良版1: rtl_tcp + 高速スキャン (cmake -DFASTSCAN=1)。rtl_tcp クライアントがいない間ボード上でスキャン */
+#ifndef CFG_FASTSCAN
+#define CFG_FASTSCAN 0
+#endif
 #define CFG_IP_ADDR           10, 5, 2, (19 + CFG_BOARD_ID)
 #define CFG_IP_MASK           255, 255, 255, 0
 #define CFG_IP_GATEWAY        10, 5, 2, 1

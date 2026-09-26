@@ -20,6 +20,7 @@ void leds_set(led_state_t s)
     case LED_IDLE:      WS2812_show2(0, 0, 60);   break;
     case LED_STREAMING: WS2812_show2(0, 60, 0);   break;
     case LED_ERROR:     WS2812_show2(60, 0, 60);  break;
+    case LED_SCAN_HIT:  WS2812_show2(0, 50, 50);  break;
     default: break;
     }
 }

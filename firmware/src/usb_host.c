@@ -41,6 +41,7 @@ static volatile bool     s_resubmit_pending = false;
 /* provided by tinyusb_patch/hcd_rp2040.c */
 extern void hcd_rp2040_bulk_reset_toggle(void);
 static uint8_t CFG_TUSB_MEM_ALIGN s_xfer_buf[CFG_USB_XFER_BYTES];
+static uint16_t s_xfer_len = CFG_USB_XFER_BYTES;   /* bytes per bulk transfer (<= buffer) */
 
 /* control */
 static volatile bool          s_ctrl_done;
@@ -303,7 +304,7 @@ static bool submit_bulk(void)
     tuh_xfer_t xfer = {
         .daddr       = s_daddr,
         .ep_addr     = s_ep_in,
-        .buflen      = sizeof(s_xfer_buf),
+        .buflen      = s_xfer_len,
         .buffer      = s_xfer_buf,
         .complete_cb = bulk_complete_cb,
         .user_data   = 0,
@@ -363,6 +364,29 @@ void usb_stream_pause(void)
     if (!s_stream_enabled) return;
     s_stream_paused = true;
     wait_idle();
+}
+
+/* like usb_stream_pause(), but drops the transfer in flight instead of waiting for it
+ * (its data is stale after a retune anyway).  Follow with rtlsdr_reset_buffer() and
+ * usb_stream_reset_toggle() so that both ends restart the pipe at DATA0. */
+void usb_stream_pause_abort(void)
+{
+    if (!s_stream_enabled) return;
+    s_stream_paused = true;
+    s_resubmit_pending = false;
+    if (s_xfer_active) {
+        tuh_edpt_abort_xfer(s_daddr, s_ep_in);
+        s_xfer_active = false;
+    }
+}
+
+/* smaller transfers hand data over sooner after a retune (scanner), larger ones cost
+ * fewer interrupts (rtl_tcp).  Multiple of 64, takes effect with the next transfer. */
+void usb_stream_set_xfer_len(uint16_t len)
+{
+    if (len < 64) len = 64;
+    if (len > sizeof(s_xfer_buf)) len = sizeof(s_xfer_buf);
+    s_xfer_len = len & ~63u;
 }
 
 void usb_stream_resume(void)

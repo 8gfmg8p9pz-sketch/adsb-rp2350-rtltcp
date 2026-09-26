@@ -323,6 +323,10 @@ static void rtlsdr_init_baseband(void)
     rtlsdr_demod_write_reg(0, 0x0d, 0x83, 1);
 }
 
+/* last value written to the IF (DDC) registers 0x19..0x1b, lets rtlsdr_set_ddc_offset() skip writes */
+static int32_t s_if_reg;
+static bool    s_if_reg_valid = false;
+
 static int rtlsdr_set_if_freq(uint32_t freq)
 {
     uint32_t rtl_xtal;
@@ -340,6 +344,8 @@ static int rtlsdr_set_if_freq(uint32_t freq)
     r |= rtlsdr_demod_write_reg(1, 0x1a, tmp, 1);
     tmp = if_freq & 0xff;
     r |= rtlsdr_demod_write_reg(1, 0x1b, tmp, 1);
+    s_if_reg = if_freq;
+    s_if_reg_valid = (r == 0);
     return r;
 }
 
@@ -419,6 +425,7 @@ int rtlsdr_open(void)
 
     memset(dev, 0, sizeof(*dev));
     s_repeater_state = -1;
+    s_if_reg_valid = false;
     memcpy(dev->fir, fir_default, sizeof(fir_default));
     dev->rtl_xtal = DEF_RTL_XTAL_FREQ;
 
@@ -551,6 +558,35 @@ int rtlsdr_set_center_freq(uint32_t freq)
 }
 
 uint32_t rtlsdr_get_center_freq(void) { return dev->freq; }
+
+/* fast scanner: move the RTL2832U's digital down-converter 'offset_hz' away from the
+ * frequency the tuner is set to, without touching the tuner (no I2C, no PLL lock wait).
+ * The offset has to stay inside the tuner IF filter (see rtlsdr_set_tuner_bandwidth()).
+ * R82xx mixes with a high-side LO, so RF = tuner freq + offset lies at IF = int_freq - offset. */
+int rtlsdr_set_ddc_offset(int32_t offset_hz)
+{
+    uint32_t rtl_xtal;
+    int32_t if_hz, if_freq;
+    int r = 0;
+
+    if (!dev->is_open || dev->direct_sampling || !tuner_is_r82xx()) return -1;
+    if_hz = (int32_t)dev->r82xx_p.int_freq - offset_hz;
+    if (if_hz <= 0) return -1;
+    if (rtlsdr_get_xtal_freq(&rtl_xtal, NULL)) return -2;
+
+    if_freq = ((if_hz * TWO_POW(22)) / rtl_xtal) * (-1);
+
+    /* 0x19 = bits 21..16, 0x1a/0x1b = bits 15..0 in one 2-byte write */
+    if (!s_if_reg_valid || ((s_if_reg ^ if_freq) & 0x3f0000))
+        r |= rtlsdr_demod_write_reg(1, 0x19, (if_freq >> 16) & 0x3f, 1);
+    if (!s_if_reg_valid || ((s_if_reg ^ if_freq) & 0xffff))
+        r |= rtlsdr_demod_write_reg(1, 0x1a, if_freq & 0xffff, 2);
+    s_if_reg = if_freq;
+    s_if_reg_valid = (r == 0);
+    return r;
+}
+
+int rtlsdr_get_direct_sampling(void) { return dev->direct_sampling; }
 
 int rtlsdr_set_freq_correction(int ppm)
 {

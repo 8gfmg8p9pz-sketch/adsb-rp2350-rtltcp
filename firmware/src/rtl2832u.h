@@ -40,6 +40,8 @@ int  rtlsdr_set_direct_sampling(int on);
 int  rtlsdr_set_offset_tuning(int on);
 int  rtlsdr_set_xtal_freq(uint32_t rtl_freq, uint32_t tuner_freq);
 int  rtlsdr_set_bias_tee(int on);
+int  rtlsdr_set_ddc_offset(int32_t offset_hz);  /* fast scanner: retune inside the tuner IF filter */
+int  rtlsdr_get_direct_sampling(void);
 int  rtlsdr_reset_buffer(void);
 enum rtlsdr_tuner rtlsdr_get_tuner_type(void);
 const char *rtlsdr_tuner_name(void);

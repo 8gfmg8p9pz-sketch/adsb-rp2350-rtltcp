@@ -62,6 +62,8 @@ add_executable(rtltcp_rp2350
     src/netlog.c
     src/scanner.c
     src/scan_net.c
+    src/fastscan.c
+    src/fastscan_net.c
     src/ring.c
     src/leds.c
     tuner/tuner_r82xx.c
@@ -117,6 +119,13 @@ if(DEFINED BOARD_ID)
 endif()
 if(SCANNER)
     target_compile_definitions(rtltcp_rp2350 PRIVATE CFG_SCANNER=1)
+endif()
+# 改良版1 (rtl_tcp + 高速スキャン):  cmake -DBOARD_ID=1 -DFASTSCAN=1 ..
+if(FASTSCAN)
+    if(SCANNER)
+        message(FATAL_ERROR "SCANNER and FASTSCAN are separate builds: pick one")
+    endif()
+    target_compile_definitions(rtltcp_rp2350 PRIVATE CFG_FASTSCAN=1)
 endif()
 
 pico_add_extra_outputs(rtltcp_rp2350)

@@ -40,6 +40,7 @@ typedef struct {
     volatile bool     sdr_ready;      /* core0: dongle initialised */
     volatile bool     link_up;        /* core1: PHY link */
     volatile bool     ip_ready;       /* core1: IP configured */
+    volatile bool     iq_to_net;      /* core0: IQ ring belongs to the rtl_tcp client (fast scanner build) */
     volatile uint32_t tuner_type;     /* for the "RTL0" header */
     volatile uint32_t tuner_gain_count;
     volatile uint32_t tcp_bytes_total;

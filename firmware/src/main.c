@@ -19,6 +19,7 @@
 #include "leds.h"
 #include "netlog.h"
 #include "scanner.h"
+#include "fastscan.h"
 #include "hardware/structs/usb.h"
 
 rtltcp_shared_t g_shared;
@@ -156,6 +157,8 @@ int main(void)
     sleep_ms(200);
 #if CFG_SCANNER
     printf("\n\n=== RP2350-POE-ETH scanner (board %d) v%s ===\n", CFG_BOARD_ID, VERSION_STR);
+#elif CFG_FASTSCAN
+    printf("\n\n=== RP2350-POE-ETH rtl_tcp + fastscan (kairyo-ban 1, board %d) v%s ===\n", CFG_BOARD_ID, VERSION_STR);
 #else
     printf("\n\n=== RP2350-POE-ETH rtl_tcp server v%s ===\n", VERSION_STR);
 #endif
@@ -171,6 +174,9 @@ int main(void)
 
 #if CFG_SCANNER
     scanner_init();
+#endif
+#if CFG_FASTSCAN
+    fastscan_init();
 #endif
     /* network on core1 */
     multicore_launch_core1(net_core1_main);
@@ -188,6 +194,9 @@ int main(void)
 #if CFG_SCANNER
         scanner_task();
 #endif
+#if CFG_FASTSCAN
+        fastscan_task();
+#endif
 
         /* dongle just enumerated -> initialise it */
         if (usb_host_state() == USBH_DEVICE_READY) {
@@ -204,6 +213,13 @@ int main(void)
                 scanner_on_sdr_ready();
                 streaming = true;
 #endif
+#if CFG_FASTSCAN
+                /* nobody on rtl_tcp: the board scans until a client connects */
+                if (!g_shared.client_connected) {
+                    fastscan_start();
+                    streaming = true;
+                }
+#endif
             } else {
                 printf("[rtl] initialisation FAILED (unsupported tuner or USB error)\n");
                 g_shared.tuner_type = 0;
@@ -216,6 +232,9 @@ int main(void)
                 usb_stream_reset_toggle();
                 usb_stream_start();
                 streaming = true;
+#if CFG_FASTSCAN
+                g_shared.iq_to_net = true;
+#endif
             }
         }
         /* the bulk pipe gave up (STALL / repeated errors): reset the dongle FIFO and restart */
@@ -239,12 +258,19 @@ int main(void)
 #if CFG_SCANNER
             scanner_on_sdr_lost();
 #endif
+#if CFG_FASTSCAN
+            fastscan_on_sdr_lost();
+#endif
         }
 
         /* commands from the TCP client (core1) */
         rtltcp_cmd_t c;
         if (queue_try_remove(&g_shared.cmd_queue, &c)) {
             if (c.cmd == RTLTCP_EVT_CLIENT_CONNECTED) {
+#if CFG_FASTSCAN
+                /* the client gets the tuner the way the plain rtl_tcp server would hand it over */
+                if (fastscan_suspend()) apply_defaults();
+#endif
                 if (usb_host_state() == USBH_DEVICE_OPEN) {
                     usb_stream_stop();
                     rtlsdr_reset_buffer();
@@ -253,10 +279,23 @@ int main(void)
                     usb_stream_start();
                     streaming = true;
                 }
+#if CFG_FASTSCAN
+                g_shared.iq_to_net = true;
+#endif
             } else if (c.cmd == RTLTCP_EVT_CLIENT_DISCONNECTED) {
+#if CFG_FASTSCAN
+                g_shared.iq_to_net = false;
+#endif
                 usb_stream_stop();
                 streaming = false;
                 ring_reset(&g_shared.iq_ring);
+#if CFG_FASTSCAN
+                /* back to scanning, unless another client is already waiting in the queue */
+                if (!g_shared.client_connected && g_shared.sdr_ready && usb_host_state() == USBH_DEVICE_OPEN) {
+                    fastscan_start();
+                    streaming = true;
+                }
+#endif
             } else if (usb_host_state() == USBH_DEVICE_OPEN && g_shared.sdr_ready) {
                 /* EPX is shared: idle the bulk pipe once for the whole command */
                 usb_stream_pause();
@@ -272,6 +311,9 @@ int main(void)
         else if (!g_shared.link_up || !g_shared.ip_ready) leds_set(LED_NO_LINK);
 #if CFG_SCANNER
         else if (scanner_monitoring())                 leds_set(LED_STREAMING);
+#elif CFG_FASTSCAN
+        else if (g_shared.client_connected)            leds_set(LED_STREAMING);
+        else if (fastscan_monitoring())                leds_set(LED_SCAN_HIT);
 #else
         else if (streaming)                            leds_set(LED_STREAMING);
 #endif
@@ -283,6 +325,9 @@ int main(void)
             print_stats();
 #if CFG_SCANNER
             scanner_print_stats();
+#endif
+#if CFG_FASTSCAN
+            fastscan_print_stats();
 #endif
         }
     }

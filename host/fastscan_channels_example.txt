@@ -1,0 +1,16 @@
+# 改良版1 のチャンネル登録例 (1号機)
+#   nc 10.5.2.20 1237 < host/fastscan_channels_example.txt
+# '#' で始まる行は無視されます。
+# ADD <MHz> [名前] [スケルチ]   名前は空白なし 15 バイトまで (日本語は 5 文字まで)、
+# スケルチは - か + で始まる数字 (dBFS、省略すると全体の SQL を使う)
+CLEAR
+SQL -53
+HOLD 3000
+ADD 118.100 TWR
+# ADD 118.725 APP
+# ADD 119.100 DEP -50
+# ADD 121.500 GUARD
+# ADD 126.200 ACC
+LIST
+SAVE
+QUIT

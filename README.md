@@ -100,6 +100,21 @@ USB ホストでドングルに給電するため、ピンヘッダの **VSYS（
 
 ログの `[scan] … win/s … ch/s … retune avg … us` で、実際のスキャン速度と切替時間が分かります。
 
+## 改良版1（1号機用: rtl_tcp ＋ チャンネル登録・高速スキャン）
+
+運用中の 1号機を置き換えずに試せるよう、**別ビルド**として作った改良版です。詳しくは [`エアバンドIQ受信_改良版1/README.md`](エアバンドIQ受信_改良版1/README.md)。
+
+- rtl_tcp（GQRX）はそのまま。GQRX が接続していない間だけ、登録チャンネルをボード上でスキャンして AM 音声を UDP で送る
+- 近いチャンネルは RTL2832U の DDC だけで切り替え（チューナーの再同調・PLL 待ちなし）、切替のたびに FIFO を空にして待ち時間を削る
+- チャンネルに名前・個別スケルチ・SKIP、受信記録（HIT / END、`LOG`）、`TUNE` で 1 チャンネル受信
+
+書き込みは号機番号付きのスクリプトで（ビルドフォルダ `build_fastscan<号機>/` と送り先 IP が対になる）:
+
+    sh host/ota_fastscan.sh 2
+    sh host/ota_fastscan.sh 1
+
+音声 `sh host/fastscan_listen.sh [号機]`、操作画面 `sh host/fastscan_console.sh [号機]`、チャンネル例 `host/fastscan_channels_example.txt`。
+
 ## ログ
 
     nc 10.5.2.20 1236
@@ -108,11 +123,13 @@ USB ホストでドングルに給電するため、ピンヘッダの **VSYS（
 
 | パス | 内容 |
 |------|------|
-| `firmware/src/` | main.c、usb_host.c、rtl2832u.c、net_server.c、ota.c、netlog.c |
+| `firmware/src/` | main.c、usb_host.c、rtl2832u.c、net_server.c、ota.c、netlog.c、scanner.c / scan_net.c（2号機）、fastscan.c / fastscan_net.c（改良版1） |
 | `firmware/tuner/` | R820T ドライバ（librtlsdr 由来） |
 | `firmware/tinyusb_patch/` | RP2350 USB ホストドライバの修正版（Bulk を EPX で高速化） |
 | `firmware/lib/` | W6300（WIZnet ioLibrary）、WS2812 |
-| `host/` | ota_push.py、GQRX 設定、起動用 AppleScript |
+| `host/` | ota_push.py、ota1.sh / ota2.sh / ota_fastscan.sh、GQRX 設定、起動用 AppleScript、スキャン音声・操作用スクリプト |
+| `エアバンドIQ受信/` | 1号機の確認済みファームウェアと復旧手順 |
+| `エアバンドIQ受信_改良版1/` | 改良版1 の説明 |
 | `simulator/` | 実機なしで試せるダミー rtl_tcp サーバー |
 
 ## 主な修正履歴
