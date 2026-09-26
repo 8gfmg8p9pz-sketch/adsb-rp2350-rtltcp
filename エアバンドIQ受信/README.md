@@ -48,7 +48,7 @@ USB で書き込むときは、PoE を抜き、ジャンパを外してから BO
 ## ソースから作り直す場合
 
     cd /tmp && tar xzf ~/rp2350-poe-airband-iq/エアバンドIQ受信/source_2029ad0.tar.gz
-    cd source_2029ad0/firmware && mkdir -p build && cd build
+    cd source_2029ad0/firmware && rm -rf build && mkdir build && cd build
     cmake -DCMAKE_BUILD_TYPE=Release .. && make -j4
 
 （または `git checkout board1-2029ad0`）
