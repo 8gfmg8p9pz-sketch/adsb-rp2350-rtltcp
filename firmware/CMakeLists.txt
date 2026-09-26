@@ -60,6 +60,8 @@ add_executable(rtltcp_rp2350
     src/net_server.c
     src/ota.c
     src/netlog.c
+    src/scanner.c
+    src/scan_net.c
     src/ring.c
     src/leds.c
     tuner/tuner_r82xx.c
@@ -108,5 +110,13 @@ target_link_libraries(rtltcp_rp2350
     WS2812
     Config
 )
+
+# 何号機か / スキャナー実験機か:  cmake -DBOARD_ID=2 -DSCANNER=1 ..
+if(DEFINED BOARD_ID)
+    target_compile_definitions(rtltcp_rp2350 PRIVATE CFG_BOARD_ID=${BOARD_ID})
+endif()
+if(SCANNER)
+    target_compile_definitions(rtltcp_rp2350 PRIVATE CFG_SCANNER=1)
+endif()
 
 pico_add_extra_outputs(rtltcp_rp2350)

@@ -13,6 +13,7 @@
 #include "pico/multicore.h"
 #include "ota.h"
 #include "netlog.h"
+#include "scanner.h"
 
 #include "config.h"
 #include "rtl_tcp.h"
@@ -255,6 +256,11 @@ void net_core1_main(void)
         }
         ota_poll();
         netlog_poll();
+#if CFG_SCANNER
+        (void)rtltcp_server_poll;
+        scan_net_poll();
+#else
         rtltcp_server_poll();
+#endif
     }
 }

@@ -184,8 +184,15 @@ static void rtlsdr_set_gpio_output(uint8_t gpio)
     rtlsdr_write_reg(SYSB, GPOE, r | gpio, 1);
 }
 
+/* scanner: keep the repeater on and skip redundant writes (fewer USB transfers per retune) */
+int rtlsdr_keep_i2c_repeater = 0;
+static int s_repeater_state = -1;
+
 static void rtlsdr_set_i2c_repeater(int on)
 {
+    if (!on && rtlsdr_keep_i2c_repeater) on = 1;
+    if (on == s_repeater_state) return;
+    s_repeater_state = on;
     rtlsdr_demod_write_reg(1, 0x01, on ? 0x18 : 0x10, 1);
 }
 
@@ -277,6 +284,7 @@ static void rtlsdr_init_baseband(void)
     /* reset demod (bit 3, soft_rst) */
     rtlsdr_demod_write_reg(1, 0x01, 0x14, 1);
     rtlsdr_demod_write_reg(1, 0x01, 0x10, 1);
+    s_repeater_state = 0;   /* soft reset leaves the repeater off */
 
     /* disable spectrum inversion and adjacent channel rejection */
     rtlsdr_demod_write_reg(1, 0x15, 0x00, 1);
@@ -410,6 +418,7 @@ int rtlsdr_open(void)
     int r = 0;
 
     memset(dev, 0, sizeof(*dev));
+    s_repeater_state = -1;
     memcpy(dev->fir, fir_default, sizeof(fir_default));
     dev->rtl_xtal = DEF_RTL_XTAL_FREQ;
 
@@ -672,6 +681,7 @@ int rtlsdr_set_sample_rate(uint32_t samp_rate)
     /* reset demod (bit 3, soft_rst) */
     r |= rtlsdr_demod_write_reg(1, 0x01, 0x14, 1);
     r |= rtlsdr_demod_write_reg(1, 0x01, 0x10, 1);
+    s_repeater_state = 0;   /* soft reset leaves the repeater off */
 
     /* recalculate offset frequency if offset tuning is enabled */
     if (dev->offs_freq)

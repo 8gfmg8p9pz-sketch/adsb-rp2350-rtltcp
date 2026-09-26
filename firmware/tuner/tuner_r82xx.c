@@ -32,6 +32,9 @@
 #include "rtlsdr_i2c.h"
 #include "tuner_r82xx.h"
 
+/* PLL lock wait per attempt (scanner lowers it at run time) */
+unsigned r82xx_pll_wait_us = 10000;
+
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #define MHZ(x)		((x)*1000*1000)
 #define KHZ(x)		((x)*1000)
@@ -454,7 +457,7 @@ static inline uint8_t mask_reg8(uint8_t reg, uint8_t val, uint8_t mask)
 static int r82xx_set_pll(struct r82xx_priv *priv, uint32_t freq)
 {
 	int rc, i;
-	unsigned sleep_time = 10000;
+	unsigned sleep_time = r82xx_pll_wait_us;
 	uint64_t vco_freq;
 	uint64_t vco_div;
 	uint32_t vco_min = 1770000; /* kHz */

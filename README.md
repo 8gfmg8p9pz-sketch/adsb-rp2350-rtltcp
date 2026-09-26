@@ -76,6 +76,30 @@ USB ホストでドングルに給電するため、ピンヘッダの **VSYS（
 - Input rate: `250000`、Mode: AM、DC remove: オン
 - 設定例: `host/gqrx_default.conf`
 
+## スキャナー実験機（2号機）
+
+同じソースから、**ボード上で高速スキャンする実験機**をビルドできます（rtl_tcp は使わず、スキャン・信号検出・AM 復調をボード上で行います）。
+
+    cd firmware && mkdir -p build2 && cd build2
+    cmake -DCMAKE_BUILD_TYPE=Release -DBOARD_ID=2 -DSCANNER=1 ..
+    make -j4
+
+- IP `10.5.2.(19+ID)`（2号機 = 10.5.2.21）、MAC 末尾 = ID
+- 近い周波数（180 kHz 以内）をまとめて1回の切替で測定（256点 FFT、約 1 kHz 分解能）
+- スケルチを超えたらモニター（AM 復調、12.5 kHz）、信号が消えて `HOLD` ms 経ったらスキャン再開
+- 複数台連携: モニター中の周波数を UDP 1238 でブロードキャストし、他機はそのチャンネルを飛ばす（同じ周波数を同時に拾ったら番号の小さい機が優先）
+- 設定はフラッシュに保存（`SAVE`）
+
+| ポート | 用途 |
+|------|------|
+| TCP 1237 | 設定（`nc 10.5.2.21 1237` で `HELP` / `ADD 118.100` / `LIST` / `SQL -53` / `SAVE` など） |
+| UDP 1238 | 複数台連携（`MON <id> <Hz>` / `END <id> <Hz>`） |
+| UDP 1240+ID | 音声（12500 Hz、16bit、モノラル）。`sh host/scan_listen.sh 2` で再生 |
+
+チャンネル登録の例: `nc 10.5.2.21 1237 < host/scanner_channels_example.txt`
+
+ログの `[scan] … win/s … ch/s … retune avg … us` で、実際のスキャン速度と切替時間が分かります。
+
 ## ログ
 
     nc 10.5.2.20 1236

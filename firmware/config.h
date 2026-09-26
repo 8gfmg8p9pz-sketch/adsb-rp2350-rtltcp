@@ -18,13 +18,21 @@
 #define CFG_USE_STATIC_IP     1
 
 /* 固定IP (CFG_USE_STATIC_IP=1 のときのみ有効)  ← 環境に合わせて変更 */
-#define CFG_IP_ADDR           10, 5, 2, 20
+/* 何号機か (cmake -DBOARD_ID=2 で変更): IP = 10.5.2.(19+ID), MAC 末尾 = ID */
+#ifndef CFG_BOARD_ID
+#define CFG_BOARD_ID 1
+#endif
+/* 1 = スキャナー実験機 (cmake -DSCANNER=1)  0 = rtl_tcp サーバー */
+#ifndef CFG_SCANNER
+#define CFG_SCANNER 0
+#endif
+#define CFG_IP_ADDR           10, 5, 2, (19 + CFG_BOARD_ID)
 #define CFG_IP_MASK           255, 255, 255, 0
 #define CFG_IP_GATEWAY        10, 5, 2, 1
 #define CFG_IP_DNS            10, 5, 2, 1
 
 /* MAC アドレス (ローカル管理アドレス。2台使うときは末尾を変える) */
-#define CFG_MAC_ADDR          0x02, 0x08, 0xDC, 0x11, 0x09, 0x01
+#define CFG_MAC_ADDR          0x02, 0x08, 0xDC, 0x11, 0x09, CFG_BOARD_ID
 
 /* rtl_tcp の待受ポート (標準 1234) */
 #define CFG_RTLTCP_PORT       1234
@@ -62,7 +70,11 @@
  * 4. 内部パラメータ (通常変更不要)
  * ------------------------------------------------------------------------- */
 #define CFG_RING_BUFFER_BYTES      (192 * 1024)  /* IQ リングバッファ (SRAM 520KB のうち) */
+#if CFG_SCANNER
+#define CFG_USB_XFER_BYTES         1024          /* スキャナー: 切替後の待ちを短くするため小さく (2 ms 分) */
+#else
 #define CFG_USB_XFER_BYTES         4096          /* 1回の USB バルク転送サイズ */
+#endif
 #define CFG_TCP_CHUNK_BYTES        8192          /* 1回の W6300 send() サイズ (ソケット0 TXバッファ 16KB) */
 #define CFG_STATUS_PRINT_SEC       5             /* 統計をシリアルに出す間隔 [s] */
 

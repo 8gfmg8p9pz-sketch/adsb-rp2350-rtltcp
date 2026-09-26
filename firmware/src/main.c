@@ -18,6 +18,7 @@
 #include "rtl2832u.h"
 #include "leds.h"
 #include "netlog.h"
+#include "scanner.h"
 #include "hardware/structs/usb.h"
 
 rtltcp_shared_t g_shared;
@@ -153,7 +154,11 @@ int main(void)
     debug_uart_init();
     netlog_init();
     sleep_ms(200);
+#if CFG_SCANNER
+    printf("\n\n=== RP2350-POE-ETH scanner (board %d) v%s ===\n", CFG_BOARD_ID, VERSION_STR);
+#else
     printf("\n\n=== RP2350-POE-ETH rtl_tcp server v%s ===\n", VERSION_STR);
+#endif
     printf("port %u, default %lu Hz @ %lu S/s\n", CFG_RTLTCP_PORT,
            (unsigned long)CFG_DEFAULT_FREQ_HZ, (unsigned long)CFG_DEFAULT_SAMPLE_RATE);
 
@@ -164,6 +169,9 @@ int main(void)
     ring_init(&g_shared.iq_ring, g_ring_storage, sizeof(g_ring_storage));
     usb_stream_set_ring(&g_shared.iq_ring);
 
+#if CFG_SCANNER
+    scanner_init();
+#endif
     /* network on core1 */
     multicore_launch_core1(net_core1_main);
     multicore_lockout_victim_init();
@@ -177,6 +185,9 @@ int main(void)
 
     while (true) {
         usb_host_task();
+#if CFG_SCANNER
+        scanner_task();
+#endif
 
         /* dongle just enumerated -> initialise it */
         if (usb_host_state() == USBH_DEVICE_READY) {
@@ -189,6 +200,10 @@ int main(void)
                 usb_host_set_open(true);
                 printf("[rtl] ready: tuner %s, %lu gain steps\n", rtlsdr_tuner_name(),
                        (unsigned long)g_shared.tuner_gain_count);
+#if CFG_SCANNER
+                scanner_on_sdr_ready();
+                streaming = true;
+#endif
             } else {
                 printf("[rtl] initialisation FAILED (unsupported tuner or USB error)\n");
                 g_shared.tuner_type = 0;
@@ -221,6 +236,9 @@ int main(void)
         if (usb_host_state() == USBH_NO_DEVICE) {
             g_shared.sdr_ready = false;
             streaming = false;
+#if CFG_SCANNER
+            scanner_on_sdr_lost();
+#endif
         }
 
         /* commands from the TCP client (core1) */
@@ -252,13 +270,20 @@ int main(void)
         else if (usb_host_state() != USBH_DEVICE_OPEN) leds_set(LED_BOOT);
         else if (!g_shared.sdr_ready)                  leds_set(LED_ERROR);
         else if (!g_shared.link_up || !g_shared.ip_ready) leds_set(LED_NO_LINK);
+#if CFG_SCANNER
+        else if (scanner_monitoring())                 leds_set(LED_STREAMING);
+#else
         else if (streaming)                            leds_set(LED_STREAMING);
+#endif
         else                                           leds_set(LED_IDLE);
 
         if (time_reached(next_stats)) {
             printf("[usbhw] main_ctrl=%08lx sie_ctrl=%08lx sie_status=%08lx muxing=%08lx pwr=%08lx\n", (unsigned long)usb_hw->main_ctrl, (unsigned long)usb_hw->sie_ctrl, (unsigned long)usb_hw->sie_status, (unsigned long)usb_hw->muxing, (unsigned long)usb_hw->pwr);
             next_stats = make_timeout_time_ms(CFG_STATUS_PRINT_SEC * 1000);
             print_stats();
+#if CFG_SCANNER
+            scanner_print_stats();
+#endif
         }
     }
     return 0;

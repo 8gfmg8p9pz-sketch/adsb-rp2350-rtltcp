@@ -1,0 +1,13 @@
+# スキャナー(2号機)のチャンネル登録例
+#   nc 10.5.2.21 1237 < host/scanner_channels_example.txt
+# '#' で始まる行は無視されます。周波数は MHz、2つ目の数字はそのチャンネル専用のスケルチ(dBFS、省略可)
+CLEAR
+SQL -53
+HOLD 3000
+ADD 118.100
+# ADD 118.050
+# ADD 118.150 -50
+# ADD 126.200
+# ADD 243.000
+LIST
+SAVE
