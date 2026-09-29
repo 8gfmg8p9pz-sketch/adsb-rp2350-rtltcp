@@ -1,19 +1,19 @@
-on checkBoard(ip)
+on checkBoard(addr)
 	try
-		set hdr to do shell script "/usr/bin/nc -G 3 " & ip & " 1234 </dev/null | /usr/bin/head -c 4"
+		set hdr to do shell script "/usr/bin/nc -G 3 " & addr & " 1234 </dev/null | /usr/bin/head -c 4"
 		return hdr is "RTL0"
 	on error
 		return false
 	end try
 end checkBoard
 
-on launchGqrx(confName, ip)
-	if my checkBoard(ip) then
+on launchGqrx(confName, addr)
+	if my checkBoard(addr) then
 		do shell script "sed -i '' 's/crashed=true/crashed=false/' \"$HOME/.config/gqrx/" & confName & "\"; nohup /opt/homebrew/bin/gqrx -c " & confName & " >/dev/null 2>&1 &"
 		delay 3
 		return ""
 	else
-		return ip & " が応答しません（PoE と LED を確認）" & return
+		return addr & " が応答しません（PoE と LED を確認）" & return
 	end if
 end launchGqrx
 
