@@ -1,0 +1,15 @@
+[Unit]
+Description=Airband AM receiver (rtl_tcp 10.5.2.24 -> HDMI audio, phone control :8091)
+After=network-online.target sound.target
+Wants=network-online.target
+
+[Service]
+User=pi
+Group=audio
+ExecStart=/usr/bin/python3 /home/pi/airband_rx.py
+Restart=always
+RestartSec=5
+Nice=-5
+
+[Install]
+WantedBy=multi-user.target
